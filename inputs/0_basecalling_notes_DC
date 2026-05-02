@@ -1,0 +1,92 @@
+Update: 28 April 2026
+Notes for basecalling and QC analysis using GHRU-mod pipeline
+By: Dewi Christina
+
+1. basecaller
+2. demux
+3. GHRU-mod_lambda_filter_off
+4. GHRU-mod_lambda_filter_on (use DCS2595.fasta)
+
+
+##########################################################################################
+##########################################################################################
+DC edited script for basecalling
+
+storage=storage folder based on sequencing done per-run/per-batch;
+/srv/nfs_share/<designated project>/<raw_data>/<batch>
+outputs stored in their designated batch folder.
+
+batch 1:
+/srv/nfs_share/2026_ACORNHAI/raw_data/ACORNHAI_3_22APRIL2026/ACORNHAI_3_22APRIL2026/20260422_1507_X4_FBD04135_d247130b
+batch 2:
+
+##########################################################################################
+All tools stored in root.
+sudo -i
+source ~/miniconda3/bin/activate
+
+1. basecaller
+navigate to <storage> in terminal first
+dorado basecaller hac pod5_skip > batch1_basecalling_hac.bam
+
+
+2. demux
+navigate to <storage> in terminal first
+dorado demux 	--output-dir output_demux \
+		--kit-name SQK-NBD114-24 \
+		--emit-fastq batch1_basecalling_hac.bam
+
+DATA PREP for pipeline input
+ls /<batch_address>/output_demux > /<R project>/raw_data/demux_batch1.csv
+Open R and generate data preparation script per-batch.
+Samplesheet for GHRU pipeline is stored in <R project>/inputs/ghru_samplesheet_batch<batch>.csv
+Samplesheet for targeted compressed file (*.fastq.gz) is stored in <R project>/inputs/ghru_compress_batch<batch>.tsv
+
+
+GHRU-mod need *.fastq.gz input instead of *.fastq (not sure why) -_-)
+navigate to /<batch_address>/output_demux then compress them all first:
+# or do a targeted file list like this based on the wetlab input
+for f in $(cat <R project>/inputs/ghru_compress_batch<batch>.tsv); do
+	gzip -kf "$f"
+done
+
+(or use while loop)
+while read -r f; do
+    gzip -k "$f"
+done < <R project>/inputs/ghru_compress_batch<batch>.tsv
+
+
+3. GHRU-mod_lambda_filter_off
+navigate to where ghru-mod is stored
+cd /srv/nfs_share/oucru_tools/GHRU-mod
+conda activate nextflow
+nextflow run main.nf \
+	--samplesheet /<R project>/inputs/ghru_samplesheet_batch<batch>.csv \
+	--outdir /<batch_address>/output_ghru-mod_lambda_filter_off \
+	--max_memory 100.GB \
+	--max_cpus 30 \
+	--medaka_model "r1041_e82_400bps_hac_v4.2.0"
+
+note that --medaka_model "r1041_e82_400bps_hac_v4.2.0" is required.
+
+4. GHRU-mod_lambda_filter_on (use DCS2595.fasta)
+DCS (DNA control sample, DCS) = SPIKE-in control. included. in. ONT. seq. kits.
+I repeatedly asked what is it, people seem don't undertand what SPIKE is,
+OR perhaps just a small misscommunication.
+That's why the original code in Jupyter Notebook include NC_001416.1 lambda DNA.
+
+navigate to where ghru-mod is stored
+cd /srv/nfs_share/oucru_tools/GHRU-mod
+conda activate nextflow
+nextflow run main.nf \
+	--samplesheet /<R project>/inputs/ghru_samplesheet_batch<batch>.csv \
+	--outdir /<batch_address>/output_ghru-mod_lambda_filter_on \
+	--remove_contamination true \
+	--dcs_file /<R project>/inputs/DCS2595.fasta \
+	--max_memory 100.GB \
+	--max_cpus 30 \
+	--medaka_model "r1041_e82_400bps_hac_v4.2.0"
+
+note that --medaka_model "r1041_e82_400bps_hac_v4.2.0" is required.
+
+
