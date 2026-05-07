@@ -14,16 +14,20 @@ source_all()
 
 # Batch list:
 # Batch 1 (22 April 2026)
-# Batch 2 (xx May 2026)
+# Batch 2 (06 May 2026)
+# Batch 3 (xx May 2026)
 
 
-current_batch <- 1
+current_batch <- 2
+ont_address <- "ACORN-HAI_BATCH2_5_06MAY26/ACORN-HAI_BATCH2_5_06MAY26/20260506_1543_X4_FBD04135_52f95109/"
+
+# use ls <folder>/* > raw_data/demux_batch<batch>.csv
 batch_prep <- prepare_batch(
-  df1 = "raw_data/ACORN_HAI_2026_log_book_batch1_22APRIL2026.xlsx",
-  df2 = "raw_data/demux_batch1.csv",
+  df1 = "raw_data/ACORN_HAI_2026_log_book_batch2_06MAY2026_temporary.xlsx",
+  df2 = "raw_data/demux_batch2.csv",
   batch = current_batch,
-  batch_address = "/srv/nfs_share/2026_ACORNHAI/raw_data/ACORNHAI_3_22APRIL2026/ACORNHAI_3_22APRIL2026/20260422_1507_X4_FBD04135_d247130b/output_demux/"
-  ) %>% 
+  batch_address = paste0("/srv/nfs_share/2026_ACORNHAI/raw_data/", ont_address, "output_demux/")
+) %>% 
   glimpse()
 
 # prepare_batch automatically creates GHRU-mod samplesheet & compressed target list
@@ -33,8 +37,8 @@ batch_prep <- prepare_batch(
 batch_qc <- compile_qc_batch(
   df1 = batch_prep,
   # TEMPORARY read.csv data on my local PC
-  # df2 = "raw_data/ACORNHAI_3_22APRIL2026/ACORNHAI_3_22APRIL2026/20260422_1507_X4_FBD04135_d247130b/output_ghru-mod_lambda_filter_off/final_tables/combined.post.csv"
-  df2 = "raw_data/output_ghru-mod_lambda_filter_off/final_tables/combined.post.csv",
+  df2 = paste0("raw_data/", ont_address, "output_ghru-mod_lambda_filter_on/final_tables/combined.post.csv"),
+  # df2 = "raw_data/output_ghru-mod_lambda_filter_off/final_tables/combined.post.csv",
   batch = current_batch
 ) %>% 
   glimpse()
@@ -44,18 +48,7 @@ batch_qc <- compile_qc_batch(
 
 ################################################################################
 # compile batches by using bind_rows
-compile_batches <- function(path = "inputs"){
-  files <- list.files(path,
-                      pattern = "worklab_workSeq_compiled_.*\\.csv$",
-                      full.names = TRUE
-  )
-  
-  return(files %>% 
-           lapply(read.csv) %>% 
-           dplyr::bind_rows()
-  )
-}
-
 compiled_batches <- compile_batches() %>% 
   glimpse()
+
 

@@ -1,11 +1,10 @@
-Update: 28 April 2026
+Update: 6 May 2026
 Notes for basecalling and QC analysis using GHRU-mod pipeline
 By: Dewi Christina
 
 1. basecaller
 2. demux
-3. GHRU-mod_lambda_filter_off
-4. GHRU-mod_lambda_filter_on (use DCS2595.fasta)
+3. GHRU-mod_lambda_filter_on (use DCS2595.fasta)
 
 
 ##########################################################################################
@@ -19,6 +18,9 @@ outputs stored in their designated batch folder.
 batch 1:
 /srv/nfs_share/2026_ACORNHAI/raw_data/ACORNHAI_3_22APRIL2026/ACORNHAI_3_22APRIL2026/20260422_1507_X4_FBD04135_d247130b
 batch 2:
+/srv/nfs_share/2026_ACORNHAI/raw_data/ACORN-HAI_BATCH2_5_06MAY26/ACORN-HAI_BATCH2_5_06MAY26/20260506_1543_X4_FBD04135_52f95109
+batch 3:
+
 
 ##########################################################################################
 All tools stored in root.
@@ -27,14 +29,14 @@ source ~/miniconda3/bin/activate
 
 1. basecaller
 navigate to <storage> in terminal first
-dorado basecaller hac pod5_skip > batch1_basecalling_hac.bam
+dorado basecaller hac pod5/ > basecalling_hac.bam
 
 
 2. demux
 navigate to <storage> in terminal first
 dorado demux 	--output-dir output_demux \
 		--kit-name SQK-NBD114-24 \
-		--emit-fastq batch1_basecalling_hac.bam
+		--emit-fastq basecalling_hac.bam
 
 DATA PREP for pipeline input
 ls /<batch_address>/output_demux > /<R project>/raw_data/demux_batch1.csv
@@ -56,20 +58,7 @@ while read -r f; do
 done < <R project>/inputs/ghru_compress_batch<batch>.tsv
 
 
-3. GHRU-mod_lambda_filter_off
-navigate to where ghru-mod is stored
-cd /srv/nfs_share/oucru_tools/GHRU-mod
-conda activate nextflow
-nextflow run main.nf \
-	--samplesheet /<R project>/inputs/ghru_samplesheet_batch<batch>.csv \
-	--outdir /<batch_address>/output_ghru-mod_lambda_filter_off \
-	--max_memory 100.GB \
-	--max_cpus 30 \
-	--medaka_model "r1041_e82_400bps_hac_v4.2.0"
-
-note that --medaka_model "r1041_e82_400bps_hac_v4.2.0" is required.
-
-4. GHRU-mod_lambda_filter_on (use DCS2595.fasta)
+3. GHRU-mod_lambda_filter_on (use DCS2595.fasta)
 DCS (DNA control sample, DCS) = SPIKE-in control. included. in. ONT. seq. kits.
 I repeatedly asked what is it, people seem don't undertand what SPIKE is,
 OR perhaps just a small misscommunication.
@@ -88,5 +77,8 @@ nextflow run main.nf \
 	--medaka_model "r1041_e82_400bps_hac_v4.2.0"
 
 note that --medaka_model "r1041_e82_400bps_hac_v4.2.0" is required.
+
+nextflow log MUST be copied to the folder's output after running GHRU-mod.
+cp /<tools directory>/GHRU-mod/.nextflow.log /<batch directory>/output_ghru-mod_lambda_filter_on/.nextflow.log
 
 

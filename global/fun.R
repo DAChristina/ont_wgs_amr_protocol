@@ -3,7 +3,7 @@ prepare_batch <- function(df1, df2, batch, batch_address){
                                         skip = 1)
   
   # generate targeted barcode list based on labWork data
-  # use ls <folder>/* > raw_data/demux.csv
+  # use ls <folder>/* > raw_data/demux_batch<batch>.csv
   demux_list <- read.csv(df2,
                          header = FALSE)
   
@@ -100,5 +100,27 @@ compile_qc_batch <- function(df1, df2, batch){
   return(out)
 }
 
+compile_csvfiles <- function(path = "inputs"){
+  files <- list.files(path,
+                      pattern = "worklab_workSeq_compiled_.*\\.csv$",
+                      full.names = TRUE
+  )
+  
+  return(files %>% 
+           lapply(read.csv) %>% 
+           dplyr::bind_rows()
+  )
+}
 
-
+compile_tabfiles <- function(path, name_file){
+  files <- list.files(path,
+                      pattern = name_file,
+                      full.names = TRUE
+  )
+  
+  return(files %>% 
+           lapply(function(f) read.delim(f, sep = "\t", header = TRUE)
+           ) %>% 
+           bind_rows()
+  )
+}

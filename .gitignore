@@ -25,7 +25,9 @@ raw_data/
 renv/
 
 inputs/*.tsv
+inputs/*.tab
 inputs/*.csv
+inputs/output_abricate*
 outputs/
 report/
 
