@@ -102,12 +102,16 @@ compile_qc_batch <- function(df1, df2, batch){
 
 compile_csvfiles <- function(path = "inputs"){
   files <- list.files(path,
-                      pattern = "worklab_workSeq_compiled_.*\\.csv$",
+                      pattern = "worklab_workSeq_compiled_batch.*\\.csv$",
                       full.names = TRUE
   )
   
   return(files %>% 
-           lapply(read.csv) %>% 
+           lapply(function(f){
+             read.csv(f) %>% 
+               dplyr::mutate(dplyr::across(everything(),
+                                           as.character))
+           }) %>% 
            dplyr::bind_rows()
   )
 }
@@ -115,12 +119,20 @@ compile_csvfiles <- function(path = "inputs"){
 compile_tabfiles <- function(path, name_file){
   files <- list.files(path,
                       pattern = name_file,
-                      full.names = TRUE
+                      full.names = TRUE,
+                      recursive = TRUE
   )
   
+  files <- files[!grepl("compiled", basename(files))]
+  
   return(files %>% 
-           lapply(function(f) read.delim(f, sep = "\t", header = TRUE)
-           ) %>% 
-           bind_rows()
+           lapply(function(f){
+             read.delim(f,
+                        sep = "\t",
+                        header = TRUE) %>% 
+               dplyr::mutate(dplyr::across(everything(),
+                                           as.character))
+           }) %>% 
+           dplyr::bind_rows()
   )
 }

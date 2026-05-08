@@ -9,7 +9,6 @@ source_all <- function(path = "global"){
   )
   invisible(lapply(files, source))
 }
-
 source_all()
 
 # Batch list:
@@ -48,7 +47,13 @@ batch_qc <- compile_qc_batch(
 
 ################################################################################
 # compile batches by using bind_rows
-compiled_batches <- compile_batches() %>% 
+workLab_workSeq_all <- compile_csvfiles() %>% 
+  # generate personal id
+  dplyr::mutate(
+    id = paste0(workLab_isolat_id, "_batch", workLab_batch, "_", workLab_native_barcode)
+  ) %>% 
   glimpse()
 
-
+write.csv(workLab_workSeq_all,
+          "inputs/workLab_workSeq_compiled_all.csv",
+          row.names = FALSE)
