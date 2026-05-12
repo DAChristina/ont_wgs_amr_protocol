@@ -1,13 +1,15 @@
-Update: 7 May 2026
+Update: 12 May 2026
 Notes for AMR detection and other identification
 By: Dewi Christina
 
 1. Horizontal gene resistance, plasmid identification & virulence factor (ABRicate)
 2. MLST typing
 
+(???????????????????????)
 3. Variant calling
 4. SNP filtering
 5. Point mutation resistance 
+(???????????????????????)
 
 
 ##########################################################################################
@@ -39,33 +41,61 @@ Compile all results in /<R project>/inputs folder
 I modify ABRicate command into a reasonable one-liner (pardon my laziness B))
 current_batch=2; \
 ont_address="ACORN-HAI_BATCH2_5_06MAY26/ACORN-HAI_BATCH2_5_06MAY26/20260506_1543_X4_FBD04135_52f95109"; \
-mkdir -p /srv/nfs_share/2026_ACORNHAI/raw_data/"$ont_address"/output_abricate; \
+ABRICATE_VERSION=$(abricate --version 2>&1 | grep -oP '\d+\.\d+\.\d+'); \
 mkdir -p /srv/nfs_share/2026_ACORNHAI/inputs/output_abricate_batch${current_batch}; \
-for i in /srv/nfs_share/2026_ACORNHAI/raw_data/"$ont_address"/output_ghru-mod_lambda_filter_on/assemblies/*.fastq.gz.long.fasta; do
-	b=$(basename "$i" .fastq.gz.long.fasta); \
-	echo "WE'RE HERE: $b"; \
-		for db in ncbi resfinder plasmidfinder card vfdb; do
-			abricate -db "$db" "$i" > /srv/nfs_share/2026_ACORNHAI/raw_data/"$ont_address"/output_abricate/"${b}_abricate_${db}.tab"; \
-		done; \
+mkdir -p /srv/nfs_share/2026_ACORNHAI/inputs/output_hamronized_batch${current_batch}; \
+for i in /srv/nfs_share/2026_ACORNHAI/raw_data/"$ont_address"/output_ghru-mod_lambda_filter_on/assemblies/*.fastq.gz.long.fasta; do \
+    b=$(basename "$i" .fastq.gz.long.fasta); \
+    echo "WE'RE HERE: $b"; \
+    for db in ncbi resfinder plasmidfinder vfdb; do \
+        abricate --db "$db" "$i" > /srv/nfs_share/2026_ACORNHAI/inputs/output_abricate_batch${current_batch}/${b}_abricate_${db}.tab; \
+        DB_VERSION=$(abricate --list | grep "^${db}" | awk '{print $4}'); \
+        hamronize abricate \
+            /srv/nfs_share/2026_ACORNHAI/inputs/output_abricate_batch${current_batch}/${b}_abricate_${db}.tab \
+            --reference_database_version "$DB_VERSION" \
+            --analysis_software_version  "$ABRICATE_VERSION" \
+            --format tsv > /srv/nfs_share/2026_ACORNHAI/inputs/output_hamronized_batch${current_batch}/${b}_hamronized_${db}.tsv; \
+    done; \
 done; \
-cp /srv/nfs_share/2026_ACORNHAI/raw_data/"$ont_address"/output_abricate/* /srv/nfs_share/2026_ACORNHAI/inputs/output_abricate_batch${current_batch}/; \
-for db in ncbi resfinder plasmidfinder card vfdb; do \
-	abricate --summary /srv/nfs_share/2026_ACORNHAI/raw_data/"$ont_address"/output_abricate/*_abricate_${db}.tab > /srv/nfs_share/2026_ACORNHAI/inputs/output_abricate_batch${current_batch}/abricate_${db}_batch${current_batch}_wide.tab; \
+for db in ncbi resfinder plasmidfinder vfdb; do \
+    abricate --summary /srv/nfs_share/2026_ACORNHAI/inputs/output_abricate_batch${current_batch}/*abricate_${db}.tab > /srv/nfs_share/2026_ACORNHAI/inputs/output_abricate_batch${current_batch}/abricate_${db}_batch${current_batch}_wide.tab; \
+done; \
+hamronize summarize /srv/nfs_share/2026_ACORNHAI/inputs/output_hamronized_batch${current_batch}/*_hamronized_*.tsv \
+    --output /srv/nfs_share/2026_ACORNHAI/inputs/output_hamronized_batch${current_batch}/hamronized_summary.tsv \
+    --summary_type tsv
+
+
+##########################################################################################
+RUNNING abriTAMR for both acquired gene and point mutation resistance
+Prepare species_samplesheet.csv using R to specify the species scheme for abriTAMR.
+
+mkdir -p /srv/nfs_share/2026_ACORNHAI/inputs/output_abritamr; \
+tail -n +2 /srv/nfs_share/2026_ACORNHAI/inputs/species_samplesheet.csv | \
+while IFS=, read -r workAMR_fasta mlst abritamr_scheme; do \
+	b=$(basename "$workAMR_fasta" .fastq.gz.long.fasta); \
+	abritamr run --species "$abritamr_scheme" \
+		--contigs "$workAMR_fasta"\
+		--prefix /srv/nfs_share/2026_ACORNHAI/inputs/output_abritamr/"${b%.*}";
 done
 
-
-
+Rename abriTAMR result based on barcodes from previous folder:
+for i in /srv/nfs_share/2026_ACORNHAI/inputs/output_abritamr/*/*; do
+	folder_name=$(basename "$(dirname "$i")")
+	b=$(basename "$i")
+	mv "$i" "$(dirname "$i")/${folder_name}_${b}"
+done
 
 
 2. MLST typing
-for i in /srv/nfs_share/2026_ACORNHAI/raw_data/ACORN-HAI_BATCH2_5_06MAY26/ACORN-HAI_BATCH2_5_06MAY26/20260506_1543_X4_FBD04135_52f95109/output_ghru-mod_lambda_filter_on/assemblies/*.fastq.gz.long.fasta; do
-	basename=$(basename "$i" .fastq.gz.long.fasta)
-	echo "WE'RE HERE: $basename"
-	mlst --scheme ncbi ${i} > /srv/nfs_share/2026_ACORNHAI/raw_data/ACORN-HAI_BATCH2_5_06MAY26/ACORN-HAI_BATCH2_5_06MAY26/20260506_1543_X4_FBD04135_52f95109/output_abricate/"$basename"_abricate_ncbi.tab
-	
-done
+Prepare species_samplesheet.csv using R to specify the MLST scheme based on bacterial genus/species.
 
+tail -n +2 /srv/nfs_share/2026_ACORNHAI/inputs/species_samplesheet.csv | \
+while IFS=, read -r workAMR_fasta mlst_scheme amr; do \
+	mlst --scheme "$mlst_scheme" \
+		"$workAMR_fasta"; done > /srv/nfs_share/2026_ACORNHAI/inputs/mlst_all.tsv
 
+Open new terminal and change owner to let the files be accessed with R
+sudo chown -R acorn2 /srv/nfs_share/2026_ACORNHAI/inputs
 
 
 
@@ -101,10 +131,6 @@ samtools rmdup sorted_long_reads.bam deduplicated.bam
 samtools faidx Kleb.pneuMGH78578.fasta
 mkdir reference
 mv Kleb.pneuMGH78578.fasta Kleb.pneuMGH78578.fasta.fai sorted_long_reads.bam sorted_long_reads.bam.bai reference 
-
-
-
-
 
 
 

@@ -13,11 +13,10 @@ source_all()
 # Batch 1 (22 April 2026)
 # Batch 2 (06 May 2026)
 # Batch 3 (xx May 2026)
-
+# Open new terminal and change owner to let the files be accessed with R
 
 current_batch <- 2
 patterns <- c(
-  "card" = ".*\\_card.tab$",
   "ncbi" = ".*\\_ncbi.tab$",
   "resfinder" = ".*\\_resfinder.tab$",
   "plasmidfinder" = ".*\\_plasmidfinder.tab$",
@@ -60,7 +59,6 @@ abricate_fol <- abricate_fol[grepl("output_abricate_batch",
 
 for (ft in c("long", "wide")){
   patterns <- c(
-    "card" = paste0(".*_card_batch[0-9]+_", ft, "\\.t.*$"),
     "ncbi" = paste0(".*_ncbi_batch[0-9]+_", ft, "\\.t.*$"),
     "resfinder" = paste0(".*_resfinder_batch[0-9]+_", ft, "\\.t.*$"),
     "plasmidfinder" = paste0(".*_plasmidfinder_batch[0-9]+_", ft, "\\.t.*$"),
@@ -100,9 +98,53 @@ for (ft in c("long", "wide")){
 # nah it is perfectly combined ;)
 
 test_wide <- read.table(
-  "inputs/abricate_card_compiled_wide_all.tsv",
+  "inputs/abricate_plasmidfinder_compiled_wide_all.tsv",
   header = TRUE,
   sep = "\t",
 ) %>% 
   glimpse()
+
+
+################################################################################
+# Analyse both acquired & point mutation-related AMR using abriTAMR
+# This samplesheet can also be used for species-specific MLST scheme
+# Prepare samplesheet specified for species from all pass QC samples
+# Available MLST sheme option: mlst --info
+
+workLab_workSeq_all <- read.csv("inputs/workLab_workSeq_compiled_all.csv") %>% 
+  dplyr::transmute(#id = id,
+                   #workDmx_filename = workDmx_filename,
+                   workAMR_fasta = gsub("output_demux", "output_ghru-mod_lambda_filter_on/assemblies",
+                                        workDmx_address),
+                   workAMR_fasta = gsub(".fastq", ".fastq.gz.long.fasta", workAMR_fasta),
+                   mlst_scheme = tolower(stringr::str_replace(workSeq_Speciator.speciesName_post,
+                                                      "(\\w)\\w+ (\\w+)", "\\1\\2")),
+                   abritamr_scheme = gsub(" ", "_", workSeq_Speciator.speciesName_post)
+  ) %>%
+  # specify both MLST & abriTAMR scheme
+  dplyr::mutate(
+    mlst_scheme = ifelse(mlst_scheme == "kpneumoniae",
+                         "klebsiella",
+                         mlst_scheme),
+    abritamr_scheme = ifelse(abritamr_scheme == "Escherichia_coli",
+                             "Escherichia",
+                             abritamr_scheme)
+  ) %>% 
+  glimpse()
+
+workLab_workSeq_all <- workLab_workSeq_all %>% 
+  dplyr::filter(mlst_scheme == "ecoli") %>%
+  dplyr::mutate(mlst_scheme = paste0(mlst_scheme, "_achtman_4")) %>%
+  dplyr::bind_rows(workLab_workSeq_all, .) %>%
+  dplyr::arrange(mlst_scheme) %>% 
+  # view() %>% 
+  glimpse()
+
+
+write.csv(workLab_workSeq_all,
+          "inputs/species_samplesheet.csv",
+          row.names = FALSE,
+          quote = FALSE
+          )
+
 

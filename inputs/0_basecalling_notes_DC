@@ -81,4 +81,3 @@ note that --medaka_model "r1041_e82_400bps_hac_v4.2.0" is required.
 nextflow log MUST be copied to the folder's output after running GHRU-mod.
 cp /<tools directory>/GHRU-mod/.nextflow.log /<batch directory>/output_ghru-mod_lambda_filter_on/.nextflow.log
 
-
