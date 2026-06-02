@@ -78,6 +78,24 @@ for db in plasmidfinder vfdb; do \
     abricate --summary /srv/nfs_share/2026_ACORNHAI/inputs/output_abricate/*abricate_${db}.tab > /srv/nfs_share/2026_ACORNHAI/inputs/abricate_${db}_wide.tab; \
 done
 
+ADDITIONAL protocol for analysing plasmids from Acetinobacter baumannii (PlasmidFinder's df is originally designed for Enterococcus)
+SOURCE: https://www.sciencedirect.com/org/science/article/pii/S2165049722006242
+fasta df downloaded from: https://github.com/MehradHamidian/AcinetobacterPlasmidTyping/blob/main/acinetobacterplasmidtyper.fasta
+
+Prepare species_samplesheet_Abaumannii_plasmid.csv using R to list all Abaumannii isolates.
+
+mkdir -p /srv/nfs_share/2026_ACORNHAI/inputs/output_abaumannii_plasmid_blastn; \
+tail -n +2 /srv/nfs_share/2026_ACORNHAI/inputs/species_samplesheet_abaumannii_plasmid.csv | \
+while IFS=, read -r workAMR_fasta mlst_scheme amr; do \
+	b=$(basename "$workAMR_fasta" .fastq.gz.long.fasta); \
+	blastn -query /srv/nfs_share/2026_ACORNHAI/inputs/acinetobacterplasmidtyper.fasta \
+		-subject "$workAMR_fasta" \
+		-outfmt 6 \
+		-perc_identity 95 \
+		-out /srv/nfs_share/2026_ACORNHAI/inputs/output_abaumannii_plasmid_blastn/${b}.txt;
+done
+
+
 
 2. MLST typing
 Prepare species_samplesheet.csv using R to specify the MLST scheme based on bacterial genus/species.

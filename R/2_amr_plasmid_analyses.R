@@ -60,6 +60,14 @@ write.csv(workLab_workSeq_all, "inputs/species_samplesheet.csv",
           row.names = FALSE, quote = FALSE)
 
 
+# prepare A. baumannii-specialised for plasmid samplesheet
+write.csv(workLab_workSeq_all %>% 
+            dplyr::filter(abritamr_scheme == "Acinetobacter_baumannii") %>% 
+            dplyr::distinct(workAMR_fasta, .keep_all = TRUE)
+          ,
+          "inputs/species_samplesheet_abaumannii_plasmid.csv",
+          row.names = FALSE, quote = FALSE)
+
 
 ################################################################################
 # compile abriTAMR results into one df
