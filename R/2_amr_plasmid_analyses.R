@@ -104,6 +104,8 @@ files <- list.files("inputs/output_abritamr",
 compiled <- lapply(files, function(f) {
   file_id <- basename(f) 
   read.delim(f, sep = "\t", header = TRUE) %>% 
+    dplyr::select(-any_of(c("text_source", "filename"))
+                  ) %>% 
     dplyr::mutate(
       dplyr::across(everything(), as.character),
       Class = stringr::str_to_title(Class),
@@ -121,6 +123,7 @@ compiled <- lapply(files, function(f) {
     ,
     by = c("filename" = "workDmx_filename")
   ) %>% 
+  dplyr::filter(!is.na(id)) %>% 
   dplyr::rename_with(~ paste0("workAbr_", .))
 
 write.table(compiled, "inputs/abritamr_amrfinder.tsv",
@@ -135,7 +138,7 @@ amr <- read.table("inputs/abritamr_amrfinder.tsv",
                   header = TRUE,
                   quote = "") %>% # use quote = "" to avoid tab misalignment
   glimpse()
-
+length(unique(amr$workAbr_id))
 
 ################################################################################
 # compile ABRicate results into one df (long format)
@@ -181,3 +184,35 @@ for (db_name in names(patterns)) {
   )
 }
 
+# test plasmid result; check wide file to see detected plasmids
+plasmid_long <- read.table("inputs/abricate_plasmidfinder_long.tsv",
+                          sep = "\t",
+                          header = TRUE,
+                          quote = "") %>% # use quote = "" to avoid tab misalignment
+  glimpse()
+length(unique(plasmid_long$workAbr_id))
+
+plasmid_wide <- read.delim("inputs/abricate_plasmidfinder_wide.tab",
+                           sep = "\t",
+                           header = TRUE,
+                           # quote = ""
+                           ) %>% # use quote = "" to avoid tab misalignment
+  glimpse()
+length(unique(plasmid_wide$X.FILE))
+
+
+# test VFDB 
+vfdb_long <- read.table("inputs/abricate_vfdb_long.tsv",
+                           sep = "\t",
+                           header = TRUE,
+                           quote = "") %>% # use quote = "" to avoid tab misalignment
+  glimpse()
+length(unique(vfdb_long$workAbr_id))
+
+vfdb_wide <- read.delim("inputs/abricate_vfdb_wide.tab",
+                           sep = "\t",
+                           header = TRUE,
+                           # quote = ""
+) %>% # use quote = "" to avoid tab misalignment
+  glimpse()
+length(unique(plasmid_wide$X.FILE))

@@ -45,6 +45,9 @@ Prepare species_samplesheet.csv using R to specify the species scheme for abriTA
 Compile all results in /<R project>/inputs folder
 Activate conda & abricate env. first.
 
+It is preferrable to make a new folder and re-analyse all samples.
+I usually change old folder to output_abritamr_old
+
 mkdir -p /srv/nfs_share/2026_ACORNHAI/inputs/output_abritamr; \
 tail -n +2 /srv/nfs_share/2026_ACORNHAI/inputs/species_samplesheet.csv | \
 while IFS=, read -r workAMR_fasta mlst abritamr_scheme; do \
