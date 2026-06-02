@@ -1,8 +1,8 @@
-Update: 12 May 2026
+Update: 11 May 2026
 Notes for AMR detection and other identification
 By: Dewi Christina
 
-1. Horizontal gene resistance, plasmid identification & virulence factor (ABRicate)
+1. Horizontal gene resistance, plasmid identification & virulence factor (ABRicate + hAMRonization or abriTAMR)
 2. MLST typing
 
 (???????????????????????)
@@ -25,49 +25,25 @@ batch 1:
 batch 2:
 /srv/nfs_share/2026_ACORNHAI/raw_data/ACORN-HAI_BATCH2_5_06MAY26/ACORN-HAI_BATCH2_5_06MAY26/20260506_1543_X4_FBD04135_52f95109
 batch 3:
+/srv/nfs_share/2026_ACORNHAI/raw_data/ACORN_HAI_BATCH3_4_25052026/ACORN_HAI_BATCH3_4_25052026/20260525_1442_X4_FBC29882_f0f8196d/
+
 
 ##########################################################################################
 All tools stored in root.
 sudo -i
 source ~/miniconda3/bin/activate
 
-1. Horizontal gene resistance (ABRicate)
-Activate conda & abricate env. first.
-Save database version used in ABRicate for this project as a text file in /inputs
-abricate --list > /srv/nfs_share/2026_ACORNHAI/inputs/db_abricate
+1. Horizontal gene resistance, plasmid identification & virulence factor (ABRicate + hAMRonization or abriTAMR)
+Two options: use ABRicate for AMR, plasmid identification, and virulence factor,
+standardize AMR with hAMRonization and create a heatmap for virulence factor and plasmid.
+OR
+Use abriTAMR for acquired and point mutations, and ABRicate for plasmid & virulence factor.
+Torsten Seeman's group (previously created ABRicate), is responsible for developing abriTAMR.
 
-Compile all results in /<R project>/inputs folder
-
-I modify ABRicate command into a reasonable one-liner (pardon my laziness B))
-current_batch=2; \
-ont_address="ACORN-HAI_BATCH2_5_06MAY26/ACORN-HAI_BATCH2_5_06MAY26/20260506_1543_X4_FBD04135_52f95109"; \
-ABRICATE_VERSION=$(abricate --version 2>&1 | grep -oP '\d+\.\d+\.\d+'); \
-mkdir -p /srv/nfs_share/2026_ACORNHAI/inputs/output_abricate_batch${current_batch}; \
-mkdir -p /srv/nfs_share/2026_ACORNHAI/inputs/output_hamronized_batch${current_batch}; \
-for i in /srv/nfs_share/2026_ACORNHAI/raw_data/"$ont_address"/output_ghru-mod_lambda_filter_on/assemblies/*.fastq.gz.long.fasta; do \
-    b=$(basename "$i" .fastq.gz.long.fasta); \
-    echo "WE'RE HERE: $b"; \
-    for db in ncbi resfinder plasmidfinder vfdb; do \
-        abricate --db "$db" "$i" > /srv/nfs_share/2026_ACORNHAI/inputs/output_abricate_batch${current_batch}/${b}_abricate_${db}.tab; \
-        DB_VERSION=$(abricate --list | grep "^${db}" | awk '{print $4}'); \
-        hamronize abricate \
-            /srv/nfs_share/2026_ACORNHAI/inputs/output_abricate_batch${current_batch}/${b}_abricate_${db}.tab \
-            --reference_database_version "$DB_VERSION" \
-            --analysis_software_version  "$ABRICATE_VERSION" \
-            --format tsv > /srv/nfs_share/2026_ACORNHAI/inputs/output_hamronized_batch${current_batch}/${b}_hamronized_${db}.tsv; \
-    done; \
-done; \
-for db in ncbi resfinder plasmidfinder vfdb; do \
-    abricate --summary /srv/nfs_share/2026_ACORNHAI/inputs/output_abricate_batch${current_batch}/*abricate_${db}.tab > /srv/nfs_share/2026_ACORNHAI/inputs/output_abricate_batch${current_batch}/abricate_${db}_batch${current_batch}_wide.tab; \
-done; \
-hamronize summarize /srv/nfs_share/2026_ACORNHAI/inputs/output_hamronized_batch${current_batch}/*_hamronized_*.tsv \
-    --output /srv/nfs_share/2026_ACORNHAI/inputs/output_hamronized_batch${current_batch}/hamronized_summary.tsv \
-    --summary_type tsv
-
-
-##########################################################################################
 RUNNING abriTAMR for both acquired gene and point mutation resistance
 Prepare species_samplesheet.csv using R to specify the species scheme for abriTAMR.
+Compile all results in /<R project>/inputs folder
+Activate conda & abricate env. first.
 
 mkdir -p /srv/nfs_share/2026_ACORNHAI/inputs/output_abritamr; \
 tail -n +2 /srv/nfs_share/2026_ACORNHAI/inputs/species_samplesheet.csv | \
@@ -83,6 +59,20 @@ for i in /srv/nfs_share/2026_ACORNHAI/inputs/output_abritamr/*/*; do
 	folder_name=$(basename "$(dirname "$i")")
 	b=$(basename "$i")
 	mv "$i" "$(dirname "$i")/${folder_name}_${b}"
+done
+
+Save database version used in ABRicate for this project as a text file in /inputs
+abricate --list > /srv/nfs_share/2026_ACORNHAI/inputs/db_abricate
+mkdir -p /srv/nfs_share/2026_ACORNHAI/inputs/output_abricate; \
+tail -n +2 /srv/nfs_share/2026_ACORNHAI/inputs/species_samplesheet.csv | \
+while IFS=, read -r workAMR_fasta mlst abritamr_scheme; do \
+	b=$(basename "$workAMR_fasta" .fastq.gz.long.fasta); \
+	for db in plasmidfinder vfdb; do \
+		abricate --db "$db" "$workAMR_fasta" > /srv/nfs_share/2026_ACORNHAI/inputs/output_abricate/${b}_abricate_${db}.tab; \
+	done; \
+done; \
+for db in plasmidfinder vfdb; do \
+    abricate --summary /srv/nfs_share/2026_ACORNHAI/inputs/output_abricate/*abricate_${db}.tab > /srv/nfs_share/2026_ACORNHAI/inputs/abricate_${db}_wide.tab; \
 done
 
 
