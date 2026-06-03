@@ -60,7 +60,7 @@ write.csv(workLab_workSeq_all, "inputs/species_samplesheet.csv",
           row.names = FALSE, quote = FALSE)
 
 
-# prepare A. baumannii-specialised for plasmid samplesheet
+# prepare A. baumannii-specialised samplesheet for plasmid detection
 write.csv(workLab_workSeq_all %>% 
             dplyr::filter(abritamr_scheme == "Acinetobacter_baumannii") %>% 
             dplyr::distinct(workAMR_fasta, .keep_all = TRUE)
@@ -224,3 +224,92 @@ vfdb_wide <- read.delim("inputs/abricate_vfdb_wide.tab",
 ) %>% # use quote = "" to avoid tab misalignment
   glimpse()
 length(unique(plasmid_wide$X.FILE))
+
+
+################################################################################
+# compile Abaumannii plasmid BLASTn results into one df
+workLab_workSeq_all <- read.csv("inputs/workLab_workSeq_compiled_all.csv") %>% 
+  dplyr::select(id,
+                workDmx_filename,
+                workSeq_Speciator.genusName_post,
+                workSeq_Speciator.speciesName_post
+  ) %>% 
+  glimpse()
+
+files <- list.files("inputs/output_abaumannii_plasmid_blastn",
+                    pattern = ".*\\.txt$",
+                    full.names = TRUE,
+                    recursive = TRUE)
+
+
+
+compiled <- lapply(files, function(f) {
+  file_id <- basename(f) 
+  read.delim(f, sep = "\t",
+             header = FALSE # BLASTn result has no header
+  ) %>% 
+    stats::setNames(c("qseqid", "temporary_sseqid",
+                      "nt_pident", "nt_length", "nt_mismatch",
+                      "nt_gapopen", "nt_qstart", "nt_qend",
+                      "nt_sstart", "nt_send",
+                      "nt_evalue", "nt_bitscore")
+    ) %>% 
+    dplyr::mutate(
+      dplyr::across(everything(), as.character),
+      text_source = gsub(".txt", "", file_id)
+    )
+}) %>% 
+  dplyr::bind_rows() %>% 
+  dplyr::transmute(
+    # adjust colnames to Abricate-like format
+    SEQUENCE = temporary_sseqid,
+    START = pmin(as.integer(nt_sstart), as.integer(nt_send)),
+    END = pmax(as.integer(nt_sstart), as.integer(nt_send)),
+    STRAND = if_else(as.integer(nt_sstart) < as.integer(nt_send), "+", "-"),
+    ACCESSION = stringr::str_extract(qseqid,
+                                     "AP\\d+\\.\\d+|CP\\d+\\.\\d+|NC_\\d+\\.\\d+"),
+    GENE = qseqid %>%
+      str_remove("^\\d+__") %>%
+      str_remove("_(AP\\d+\\.\\d+|CP\\d+\\.\\d+|NC_\\d+\\.\\d+)_"),
+    X.IDENTITY = as.numeric(nt_pident),
+    DATABASE = "AcinetobacterPlasmidTyping",
+    COVERAGE = paste0(nt_qstart, "-", nt_qend, "/", nt_length),
+    X.COVERAGE = round(100*(abs(as.numeric(nt_qend)-as.numeric(nt_qstart))+1)
+                       /as.numeric(nt_length),
+                       2),
+    filename = text_source
+  ) %>%
+  dplyr::left_join(
+    workLab_workSeq_all
+    ,
+    by = c("filename" = "workDmx_filename")
+  ) %>% 
+  dplyr::filter(!is.na(id)) %>% 
+  dplyr::rename_with(~ paste0("workAbr_", .))
+
+
+write.table(
+  compiled,
+  file = "inputs/abaumannii_plasmid_blastn_long.tsv",
+  sep = "\t",
+  row.names = FALSE,
+  quote = FALSE
+)
+
+# Update plasmidfinder's result with Abaumannii's
+write.table(
+  dplyr::bind_rows(
+    read.table("inputs/abricate_plasmidfinder_long.tsv",
+               sep = "\t",
+               header = TRUE,
+               quote = "")
+    ,
+    compiled
+  )
+  ,
+  file = "inputs/abricate_plasmidfinder_with_abaumannii_long.tsv",
+  sep = "\t",
+  row.names = FALSE,
+  quote = FALSE
+)
+
