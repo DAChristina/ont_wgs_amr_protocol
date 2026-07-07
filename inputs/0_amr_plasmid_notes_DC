@@ -85,7 +85,7 @@ fasta df downloaded from: https://github.com/MehradHamidian/AcinetobacterPlasmid
 Prepare species_samplesheet_Abaumannii_plasmid.csv using R to list all Abaumannii isolates.
 
 mkdir -p /srv/nfs_share/2026_ACORNHAI/inputs/output_abaumannii_plasmid_blastn; \
-tail -n +2 /srv/nfs_share/2026_ACORNHAI/inputs/species_samplesheet_abaumannii_plasmid.csv | \
+tail -n +2 /srv/nfs_share/2026_ACORNHAI/inputs/species_samplesheet_Abaumannii_plasmid.csv | \
 while IFS=, read -r workAMR_fasta mlst_scheme amr; do \
 	b=$(basename "$workAMR_fasta" .fastq.gz.long.fasta); \
 	blastn -query /srv/nfs_share/2026_ACORNHAI/inputs/acinetobacterplasmidtyper.fasta \

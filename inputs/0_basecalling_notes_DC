@@ -1,4 +1,4 @@
-Update: 6 May 2026
+Update: 4 Jun 2026
 Notes for basecalling and QC analysis using GHRU-mod pipeline
 By: Dewi Christina
 
@@ -81,3 +81,49 @@ note that --medaka_model "r1041_e82_400bps_hac_v4.2.0" is required.
 nextflow log MUST be copied to the folder's output after running GHRU-mod.
 cp /<tools directory>/GHRU-mod/.nextflow.log /<batch directory>/output_ghru-mod_lambda_filter_on/.nextflow.log
 
+ALL folders related to GHRU-mod results must be moved to NAS before AMR-plasmid-virulence factor analysis
+Link PC OUCRU to NAS first!
+sudo mount -t nfs 152.118.5.82:/volume1/GRIDION_BACKUP /mnt/nasid-acorn2-backup/
+
+mw -r /<tools directory>/GHRU-mod/work /mnt/nasid-acorn2-backup/GRIDION/<project directory>/0_GHRU-mod_work/work_batch<batch number>
+
+Compile (copy) fasta and fastq to 1 folder in NAS
+Compile fasta
+find /folder/project/batch -type f -path "*/mydata/*.txt" -exec cp {} /folder/project/compiled_txt/ \;
+
+find /mnt/nasid-acorn2-backup/GRIDION/ACORN_HAI/batches_run_compiled \
+	-type f \
+	-regextype posix-extended \
+	-regex '.*_BATCH[456]_.*' \
+	-path '*/output_ghru-mod_lambda_filter_on/assemblies/*.fastq.gz.long.fasta' \
+	-exec cp {} /mnt/nasid-acorn2-backup/GRIDION/ACORN_HAI/0_compiled_fasta/ \;
+
+Compile fastq
+find /mnt/nasid-acorn2-backup/GRIDION/ACORN_HAI/batches_run_compiled \
+	-type f \
+	-regextype posix-extended \
+	-regex '.*_BATCH[456]_.*' \
+	-path */output_ghru-mod_lambda_filter_on/fastqs/*.cleaned.fastq.gz \
+	-exec cp {} /mnt/nasid-acorn2-backup/GRIDION/ACORN_HAI/0_compiled_fastq/ \;
+
+Copy the folder to PC OUCRU's RProject inputs to simplify data analysis
+cp -R /mnt/nasid-acorn2-backup/GRIDION/ACORN_HAI/0_compiled_fasta \
+	/srv/nfs_share/2026_ACORNHAI/raw_data
+
+
+################################################################################################################
+# PREVIOUS compiled Pseudomonas aeruginosa data from ACORN study (2025) from NAS
+/mnt/nasid-acorn2-backup/GRIDION/ACORN/batches_run_compiled
+/mnt/nasid-acorn2-backup/GRIDION/ACORN/0_dc_compiled
+0_compiled_fasta_PAE
+*PAE*.fa*
+find /mnt/nasid-acorn2-backup/GRIDION/ACORN/batches_run_compiled -type f \
+	-name "*PAE*.fa*" \
+	-exec cp {} /mnt/nasid-acorn2-backup/GRIDION/ACORN/0_dc_compiled/0_compiled_fasta_PAE/ \;
+
+0_compiled_fastq_PAE
+*PAE*.fastq*
+
+I create a list for available fasta & fastq files:
+ls > /home/acorn2/Downloads/list_ACORN_PAE_fasta_files.txt
+ls > /home/acorn2/Downloads/list_ACORN_PAE_fastq_files.txt

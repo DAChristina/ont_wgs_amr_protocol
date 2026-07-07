@@ -14,16 +14,19 @@ source_all()
 # Batch list:
 # Batch 1 (22 April 2026)
 # Batch 2 (06 May 2026)
-# Batch 3 (xx May 2026)
+# Batch 3 (20 May 2026)
+# Batch 4 FAILED due to insufficient active pore
+# Batch 5 (29 June 2026)
+# Batch 6 (06 July 2026)
 
 
-current_batch <- 2
-ont_address <- "ACORN-HAI_BATCH2_5_06MAY26/ACORN-HAI_BATCH2_5_06MAY26/20260506_1543_X4_FBD04135_52f95109/"
+current_batch <- 6
+ont_address <- "ACORNHAI_BATCH6_12_06072026/ACORNHAI_BATCH6_12_06072026/20260706_1621_X4_FBD01789_7551ff55/"
 
 # use ls <folder>/* > raw_data/demux_batch<batch>.csv
 batch_prep <- prepare_batch(
-  df1 = "raw_data/ACORN_HAI_2026_log_book_batch2_06MAY2026_temporary.xlsx",
-  df2 = "raw_data/demux_batch2.csv",
+  df1 = "raw_data/ACORN_HAI_2026_log_book_batch6_06JULY2026.xlsx",
+  df2 = "raw_data/demux_batch6.csv",
   batch = current_batch,
   batch_address = paste0("/srv/nfs_share/2026_ACORNHAI/raw_data/", ont_address, "output_demux/")
 ) %>% 
