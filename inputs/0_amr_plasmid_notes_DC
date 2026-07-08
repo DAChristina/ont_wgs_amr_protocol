@@ -1,4 +1,4 @@
-Update: 11 May 2026
+Update: 08 July 2026
 Notes for AMR detection and other identification
 By: Dewi Christina
 
@@ -26,6 +26,13 @@ batch 2:
 /srv/nfs_share/2026_ACORNHAI/raw_data/ACORN-HAI_BATCH2_5_06MAY26/ACORN-HAI_BATCH2_5_06MAY26/20260506_1543_X4_FBD04135_52f95109
 batch 3:
 /srv/nfs_share/2026_ACORNHAI/raw_data/ACORN_HAI_BATCH3_4_25052026/ACORN_HAI_BATCH3_4_25052026/20260525_1442_X4_FBC29882_f0f8196d/
+batch 4:
+FAILED due to bad pore
+batch 5:
+/srv/nfs_share/2026_ACORNHAI/raw_data/ACORN_HAI_BATCH5_15_290626/ACORN_HAI_BATCH5_15_290626/20260629_1651_X5_FBD01789_55c3a3ec/
+batch 6:
+/srv/nfs_share/2026_ACORNHAI/raw_data/ACORNHAI_BATCH6_12_06072026/ACORNHAI_BATCH6_12_06072026/20260706_1621_X4_FBD01789_7551ff55/
+
 
 
 ##########################################################################################
@@ -80,15 +87,28 @@ done
 
 ADDITIONAL protocol for analysing plasmids from Acetinobacter baumannii (PlasmidFinder's df is originally designed for Enterococcus)
 SOURCE: https://www.sciencedirect.com/org/science/article/pii/S2165049722006242
-fasta df downloaded from: https://github.com/MehradHamidian/AcinetobacterPlasmidTyping/blob/main/acinetobacterplasmidtyper.fasta
+fasta df downloaded from: https://github.com/MehradHamidian/AcinetobacterPlasmidTyping/blob/main
+I personally compile ALL of the Abaumannii's plasmid type into a FASTA file called acinetobacterplasmidtyper_compiled.fasta (update 8 July 2026)
+stored in a designated folder /inputs/db_abaumannii_plasmid
+consisting of:
+Rep/rep database
+https://github.com/MehradHamidian/AcinetobacterPlasmidTyping/blob/main/2026_May_rep_DNA-seqs_V3.fasta
+Mob/mob database
+https://github.com/MehradHamidian/AcinetobacterPlasmidTyping/blob/main/2026_May_mob_DNA-seqs_V1.fasta
+ParA/parA database
+https://github.com/MehradHamidian/AcinetobacterPlasmidTyping/blob/main/2026_May_parA_DNA-seqs_V1.fasta
+CIS database (Conserved Intergenic Region)
+https://github.com/MehradHamidian/AcinetobacterPlasmidTyping/blob/main/2026_May_CIS_DNA-seqs_V1.fasta
+
+cat /srv/nfs_share/2026_ACORNHAI/inputs/db_abaumannii_plasmid/*.fasta > /srv/nfs_share/2026_ACORNHAI/inputs/acinetobacterplasmidtyper_compiled.fasta
 
 Prepare species_samplesheet_Abaumannii_plasmid.csv using R to list all Abaumannii isolates.
 
 mkdir -p /srv/nfs_share/2026_ACORNHAI/inputs/output_abaumannii_plasmid_blastn; \
-tail -n +2 /srv/nfs_share/2026_ACORNHAI/inputs/species_samplesheet_Abaumannii_plasmid.csv | \
+tail -n +2 /srv/nfs_share/2026_ACORNHAI/inputs/species_samplesheet_abaumannii_plasmid.csv | \
 while IFS=, read -r workAMR_fasta mlst_scheme amr; do \
 	b=$(basename "$workAMR_fasta" .fastq.gz.long.fasta); \
-	blastn -query /srv/nfs_share/2026_ACORNHAI/inputs/acinetobacterplasmidtyper.fasta \
+	blastn -query /srv/nfs_share/2026_ACORNHAI/inputs/acinetobacterplasmidtyper_compiled.fasta \
 		-subject "$workAMR_fasta" \
 		-outfmt 6 \
 		-perc_identity 95 \
