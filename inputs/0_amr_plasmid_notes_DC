@@ -62,9 +62,7 @@ while IFS=, read -r workAMR_fasta mlst abritamr_scheme; do \
 	abritamr run --species "$abritamr_scheme" \
 		--contigs "$workAMR_fasta"\
 		--prefix /srv/nfs_share/2026_ACORNHAI/inputs/output_abritamr/"${b%.*}";
-done
-
-Rename abriTAMR result based on barcodes from previous folder:
+done; \
 for i in /srv/nfs_share/2026_ACORNHAI/inputs/output_abritamr/*/*; do
 	folder_name=$(basename "$(dirname "$i")")
 	b=$(basename "$i")

@@ -16,6 +16,7 @@ source_all()
 # Batch 4 FAILED due to insufficient active pore
 # Batch 5 (29 June 2026)
 # Batch 6 (06 July 2026)
+# Batch 7 (14 July 2026)
 
 ################################################################################
 # Analyse both acquired & point mutation-related AMR using abriTAMR
@@ -28,8 +29,16 @@ source_all()
 workLab_workSeq_all <- read.csv("inputs/workLab_workSeq_compiled_all.csv") %>% 
   
   # filter just only for PASS QC
-  # need to be adjusted following QC report
-  # dplyr::filter() %>% 
+  # Adjusted following QC report; please look at 1_batch_preparation.R
+  # filter pre-sequencing duplications
+  dplyr::filter(!duplicated(
+    received_isolate_id,
+    fromLast = TRUE)) %>% 
+  # filter pass QC
+  dplyr::filter(!is.na(workLab_native_barcode),
+                workSeq_all_checks_passed_post %in% c("True", "Tolerated")
+                ) %>%
+  # end of adjustment setting & QC filter
   dplyr::transmute(#id = id,
     #workDmx_filename = workDmx_filename,
     workAMR_fasta = paste0("/srv/nfs_share/2026_ACORNHAI/raw_data/0_compiled_fasta/",

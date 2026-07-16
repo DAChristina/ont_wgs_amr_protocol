@@ -1,10 +1,9 @@
-Update: 4 Jun 2026
+Update: 15 Jul 2026
 Notes for basecalling and QC analysis using GHRU-mod pipeline
 By: Dewi Christina
 
-1. basecaller
-2. demux
-3. GHRU-mod_lambda_filter_on (use DCS2595.fasta)
+1. basecaller & demux
+2. GHRU-mod_lambda_filter_on (use DCS2595.fasta)
 
 
 ##########################################################################################
@@ -27,18 +26,15 @@ All tools stored in root.
 sudo -i
 source ~/miniconda3/bin/activate
 
-1. basecaller
+1. basecaller & demux
 navigate to <storage> in terminal first
-dorado basecaller hac pod5/ > basecalling_hac.bam
-
-
-2. demux
-navigate to <storage> in terminal first
+dorado basecaller hac pod5/ > basecalling_hac.bam && \
 dorado demux 	--output-dir output_demux \
 		--kit-name SQK-NBD114-24 \
 		--emit-fastq basecalling_hac.bam
 
-DATA PREP for pipeline input
+
+2. DATA PREP for pipeline input
 ls /<batch_address>/output_demux > /<R project>/raw_data/demux_batch1.csv
 Open R and generate data preparation script per-batch.
 Samplesheet for GHRU pipeline is stored in <R project>/inputs/ghru_samplesheet_batch<batch>.csv
